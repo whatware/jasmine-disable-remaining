@@ -1,0 +1,46 @@
+{
+  "version": "0.1.0",
+  "name": "jasmine-disable-remaining",
+  "description": "Disable all remaining specs on the first spec failure.",
+  "author": {
+    "email": "justmike-github.com@whatware.com",
+    "name": "justmike",
+    "url" : "https://github.com/justmike"
+  },
+  "bugs": {
+    "email": "justmike-github.com@whatware.com",
+    "url" : "https://github.com/whatware/jasmine-disable-remaining/issues"
+  },
+  "bundledDependencies": [],
+  "dependencies": {
+    "lodash": "~4.10.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=4.4.1"
+  },
+  "keywords": [
+    "jasmine",
+    "fail",
+    "failure",
+    "disable",
+    "remaining",
+    "spec",
+    "reporter"
+  ],
+  "license": "MIT",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/whatware/jasmine-disable-remaining/LICENSE"
+    }
+  ],
+  "main": "dist/jasmine-disable-remaining.js",
+  "optionalDependencies": {},
+  "peerDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/whatware/jasmine-disable-remaining.git"
+  },
+  "scripts": {}
+}
