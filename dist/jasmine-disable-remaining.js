@@ -40,7 +40,7 @@ module.exports = () => {
                 beforeFns: true,
                 afterFns: true
             },
-            message: [
+            defaultMessage: [
                 '---------------------------------------------------------------------------------------------------',
                 '\nThis spec has FAILED. You specified on the command line that all remaining specs should be disabled',
                 '\n---------------------------------------------------------------------------------------------------'
@@ -60,7 +60,7 @@ module.exports = () => {
                 beforeFns: true,
                 afterFns: true
             },
-            message: [
+            defaultMessage: [
                 '-------------------------------------------------------------------------------------',
                 '\nThis spec has FAILED and it has specified that all remaining specs should be disabled',
                 '\n-------------------------------------------------------------------------------------'
@@ -80,7 +80,7 @@ module.exports = () => {
                 beforeFns: true,
                 afterFns: false
             },
-            message: [
+            defaultMessage: [
                 '--------------------------------------------------------------------------------------------------',
                 '\nThis spec has FAILED and it has specified that all remaining specs in this file should be disabled',
                 '\n--------------------------------------------------------------------------------------------------'
@@ -124,36 +124,57 @@ module.exports = () => {
                 return;
             }
 
-            let config;
-            let suite;
+            const jasmineDisableRemaining = this.jasmineDisableRemaining;
+            const config = jasmineDisableRemaining.config;
+            const data = jasmineDisableRemaining.data;
+            const topSuite = jasmineDisableRemaining.jasmine.getEnv().topSuite();
+
+            // count all failures per suite
+            everyParentSuite(data.specs[result.id].parentSuite, (suite) => {
+                if (!_.isObject(suite.result)) {
+                    suite.result = {};
+                }
+                if (!_.isNumber(suite.result.totalSpecFailures)) {
+                    suite.result.totalSpecFailures = 1;
+                } else {
+                    ++suite.result.totalSpecFailures;
+                }
+            });
+
+            let disableConfig;
+            let disableSuite;
 
             // type of disable
-            if (this.jasmineDisableRemaining.config.allSpecsByCLI.disableSpecs) {
-                config = this.jasmineDisableRemaining.config.allSpecsByCLI;
-                suite = this.jasmineDisableRemaining.jasmine.getEnv().topSuite();
-            } else if (this.jasmineDisableRemaining.config.allSpecsDynamic.disableSpecs) {
-                config = this.jasmineDisableRemaining.config.allSpecsDynamic;
-                suite = this.jasmineDisableRemaining.jasmine.getEnv().topSuite();
-            } else if (this.jasmineDisableRemaining.config.allFileSpecsDynamic.disableSpecs) {
-                config = this.jasmineDisableRemaining.config.allFileSpecsDynamic;
-                suite = findFileSuite(this.jasmineDisableRemaining.data.specs[result.id].parentSuite);
+            if (config.allSpecsByCLI.disableSpecs) {
+                disableConfig = config.allSpecsByCLI;
+                disableSuite = topSuite;
+            } else if (config.allSpecsDynamic.disableSpecs) {
+                disableConfig = config.allSpecsDynamic;
+                disableSuite = topSuite;
+            } else if (config.allFileSpecsDynamic.disableSpecs) {
+                disableConfig = config.allFileSpecsDynamic;
+                disableSuite = findFileSuite(data.specs[result.id].parentSuite);
             } else {
                 return;
             }
 
             // disable
-            disableAllChildren.call(this, config, suite);
+            disableAllChildren.call(this, disableConfig, disableSuite);
 
             // log
-            if (_.isString(config.message)) {
-                this.jasmineDisableRemaining.config.log(config.message);
-            } else if (_.isArray(config.message)) {
-                this.jasmineDisableRemaining.config.log.apply(this, config.message);
+            if (_.isString(disableConfig.message)) {
+                config.log(disableConfig.message);
+            } else if (_.isArray(disableConfig.message)) {
+                config.log.apply(this, disableConfig.message);
+            } else if (_.isArray(disableConfig.defaultMessage)) {
+                config.log.apply(this, disableConfig.defaultMessage);
+            } else if (_.isString(disableConfig.defaultMessage)) {
+                config.log(disableConfig.defaultMessage);
             }
 
             // callback
-            if (_.isFunction(config.callback)) {
-                config.callback.call(this, this, result, this.jasmineDisableRemaining.data.specs[result.id]);
+            if (_.isFunction(disableConfig.callback)) {
+                disableConfig.callback.call(this, this, result, data.specs[result.id]);
             }
         }
     }
@@ -197,6 +218,21 @@ module.exports = () => {
         }
         if (config.disableSuites.afterFns) {
             suite.afterFns = [];
+        }
+    }
+
+    /*
+     * Reverse traverse the hierarchy by following `parentSuite`s
+     * calling `callbackForSuites` for each suite inclusive
+     */
+    function everyParentSuite(suite, callbackForSuites) {
+        const _this = this;
+
+        if (suite) {
+            callbackForSuites.call(_this, suite);
+            if (suite.parentSuite) {
+                return everyParentSuite(suite.parentSuite, callbackForSuites);
+            }
         }
     }
 

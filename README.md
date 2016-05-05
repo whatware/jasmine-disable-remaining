@@ -1,6 +1,14 @@
-# jasmine-disable-remaining 0.1.0 (2016-04-13)
+# jasmine-disable-remaining 0.2.0 (2016-05-05)
 
 When a spec fails, either disable all remaining specs, or all remaining specs in the same file.
+
+[![GitHub issues](https://img.shields.io/github/issues/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining/issues)
+[![GitHub release](https://img.shields.io/github/release/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
+[![GitHub tag](https://img.shields.io/github/tag/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
+[![npm](https://img.shields.io/npm/v/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://www.npmjs.com/package/jasmine-disable-remaining)
+
+[![NPM](https://nodei.co/npm/jasmine-disable-remaining.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jasmine-disable-remaining/)
+
 Provided as a reporter class for the jasmine test framework.
 
 ## Installation
@@ -101,7 +109,8 @@ You can also specify dynamically (within you tests) when to disable all remainin
 #### Disable all remaining specs
 
 ```js
-    browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config.allSpecsDynamic.disableSpecs = true;
+    const config = browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config;
+    config.allSpecsDynamic.disableSpecs = true;
 ```
 
 Use this if you want to disable all tests after the first fail.
@@ -115,13 +124,15 @@ You can also just set it in `config.onPrepare`.
 Turn on using (typically in a `beforeAll`)
 
 ```js
-    browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config.allFileSpecsDynamic.disableSpecs = true;
+    const config = browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config;
+    config.allFileSpecsDynamic.disableSpecs = true;
 ```
 
 Turn off using (typically in a `afterAll`)
 
 ```js
-    browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config.allFileSpecsDynamic.disableSpecs = false;
+    const config = browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config;
+    config.allFileSpecsDynamic.disableSpecs = false;
 ```
 
 Use this if you want to disable all tests in a file after the first fail.
@@ -129,10 +140,46 @@ It must be set before the spec you're interested in.
 **_Please note_** this setting is global.
 It must be turned off so it doesn't affect other files.
 
-**TL; DR**: if you don't turn this off, all remaining files will have this turned on.
+**TL; DR**: if you don't remember to turn this off, all remaining files will have this turned on.
 
 You can also just set it in `config.onPrepare` and then for any file with a failure,
 all remaining specs _in that file_ will be disabled.
+
+#### Change the failure messages
+
+There are three different types of messages:
+
+```js
+    const config = browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.config;
+    config.allSpecsByCLI.message = 'disabling all specs turned on by command line';
+    config.allSpecsDynamic.message = 'disabling all specs turned on in a suite';
+    config.allFileSpecsDynamic.message = 'disabling all specs in a file turned on in a suite';
+```
+
+See `defaultConfig` in [`dist/jasmine-disable-remaining.js`](dist/jasmine-disable-remaining.js)
+for all default message vaules.
+
+To change e.g., `allFileSpecsDynamic` message using (typically in a `beforeAll`)
+
+```js
+    config.allFileSpecsDynamic.message = 'my custom message string';
+```
+
+or
+
+```js
+    config.allFileSpecsDynamic.message = [
+        '-------------------------',
+        '\nMy custom verbose message',
+        '\n-------------------------'
+    ];
+```
+
+Revert to the default message using (typically in a `afterAll`)
+
+```js
+    config.allFileSpecsDynamic.message = null;
+```
 
 ### Advanced
 
