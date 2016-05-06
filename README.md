@@ -1,4 +1,4 @@
-# jasmine-disable-remaining 0.2.0 (2016-05-05)
+# jasmine-disable-remaining 0.2.2 (2016-05-06)
 
 When a spec fails, either disable all remaining specs, or all remaining specs in the same file.
 
