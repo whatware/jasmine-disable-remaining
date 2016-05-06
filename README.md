@@ -2,10 +2,10 @@
 
 When a spec fails, either disable all remaining specs, or all remaining specs in the same file.
 
-[![GitHub issues](https://img.shields.io/github/issues/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining/issues)
-[![GitHub release](https://img.shields.io/github/release/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
-[![GitHub tag](https://img.shields.io/github/tag/whatware/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
-[![npm](https://img.shields.io/npm/v/jasmine-disable-remaining.svg?maxAge=2592000&style=plastic)](https://www.npmjs.com/package/jasmine-disable-remaining)
+[![GitHub issues](https://img.shields.io/github/issues/whatware/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://github.com/whatware/jasmine-disable-remaining/issues)
+[![GitHub release](https://img.shields.io/github/release/whatware/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
+[![GitHub tag](https://img.shields.io/github/tag/whatware/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
+[![npm](https://img.shields.io/npm/v/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://www.npmjs.com/package/jasmine-disable-remaining)
 
 [![NPM](https://nodei.co/npm/jasmine-disable-remaining.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/jasmine-disable-remaining/)
 

@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.1",
   "name": "jasmine-disable-remaining",
   "description": "Disable all remaining specs on the first spec failure.",
   "author": {
