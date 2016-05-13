@@ -1,6 +1,6 @@
-# jasmine-disable-remaining 0.2.2 (2016-05-06)
+# jasmine-disable-remaining 0.3.0 (2016-05-13)
 
-When a spec fails, either disable all remaining specs, or all remaining specs in the same file.
+When a spec fails, either disable all remaining specs, or all remaining specs in the same file, or all specs in suites matching a pattern.
 
 [![GitHub issues](https://img.shields.io/github/issues/whatware/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://github.com/whatware/jasmine-disable-remaining/issues)
 [![GitHub release](https://img.shields.io/github/release/whatware/jasmine-disable-remaining.svg?maxAge=3600&style=plastic)](https://github.com/whatware/jasmine-disable-remaining)
@@ -144,6 +144,57 @@ It must be turned off so it doesn't affect other files.
 
 You can also just set it in `config.onPrepare` and then for any file with a failure,
 all remaining specs _in that file_ will be disabled.
+
+#### Disable all specs in suites _matching a pattern_
+
+Use this if you want to disable all tests in any suites with matching description.
+
+This is useful if you have a large number of specs that are broken in to "categories",
+and have them broken down across a large number of files from basic to complex.
+Take the following example scenario of types of suite files.
+
+You have multiple "categories" of components being tested (e.g., "admin-panel", "client-panel"),
+broken down as follows in each category:
+
+- Smoke tests -- these tests run first, verifying all the lowest level required interactions (e.g., REST calls)
+- Existence tests -- these tests run second, ensuring all components exist, are present, are visible, etc.
+- Rudimentary tests -- these tests run third, and perform simple interactions
+- Comprehensive tests -- these tests run last, and are the full/complex tests
+
+If any upper level specs fail, the subsequent level would also fail.
+
+E.g., if your "admin-panel" smoke tests fail, you would want to disable only the remaining "admin-panel" tests.
+So, all your "admin-panel" spec files would have a top-most `describe('admin-panel: blah blah'...`,
+and your matcher pattern would be `/^admin-panel:/`.
+
+Also, by breaking the tests up in this way, you may be able to more easily determine if the issues are fundamental or system wide.
+
+Turn on using
+
+```js
+    const jasmineDisableRemaining = browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining;
+    let matcherGUID;
+
+    beforeAll(() => {
+        matcherGUID = jasmineDisableRemaining.addSuitesMatcher(/^Some prefix/, {
+            message: [
+                '---------------------------------------------------------------------------------------------------',
+                '\nSpecs have FAILED and specified that all specs in suites matching /^Some prefix/ should be disabled',
+                '\n---------------------------------------------------------------------------------------------------'
+            ]
+        });
+    });
+```
+
+Turn off using
+
+```js
+    afterAll(() => {
+        browser.params.jasmineDisableRemainingReporter.jasmineDisableRemaining.removeSuitesMatcher(matcherGUID);
+    });
+```
+
+**NOTE**: if you don't remember to turn this off, any remaining spec that fails will cause these matched suites to be disabled
 
 #### Change the failure messages
 

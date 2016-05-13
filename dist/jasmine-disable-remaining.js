@@ -16,6 +16,30 @@
 const _ = require('lodash');
 
 module.exports = () => {
+    const defaultSuitesMatcherConfig = {
+        callback: null,
+
+        // .disableSpecs is intended to be set dynamically, e.g.:
+        // it would normally be set to true in a file's beforeAll
+        // and set to false in the file's afterAll
+        // which would only run if there were no failures
+        disableSpecs: false,
+        disableSuites: {
+            beforeAllFns: true,
+            afterAllFns: true,
+            beforeFns: true,
+            afterFns: true
+        },
+
+        // copy the following for your message
+        // '\nSpecs have FAILED and specified that all specs in suites matching /YOUR-PATTERN-HERE/ should be disabled',
+        defaultMessage: [
+            '----------------------------------------------------------------------------------------------',
+            '\nSpecs have FAILED and specified that all specs in suites matching a pattern should be disabled',
+            '\n----------------------------------------------------------------------------------------------'
+        ]
+    };
+
     /*
      * usage for each of the `all*` config properties:
      *   callback - called as: callback.call(this, this, result, spec)
@@ -86,6 +110,7 @@ module.exports = () => {
                 '\n--------------------------------------------------------------------------------------------------'
             ]
         },
+        allMatchingSuites: [],
         log: console.log
     };
 
@@ -98,7 +123,9 @@ module.exports = () => {
                     config: defaultConfig,
                     data: {
                         specs: {}
-                    }
+                    },
+                    addSuitesMatcher: (match, config) => addSuitesMatcher.call(this, match, config),
+                    removeSuitesMatcher: (guid) => removeSuitesMatcher.call(this, guid)
                 },
                 {
                     config: optionalConfigInit
@@ -124,13 +151,16 @@ module.exports = () => {
                 return;
             }
 
+            const _this = this;
+
             const jasmineDisableRemaining = this.jasmineDisableRemaining;
             const config = jasmineDisableRemaining.config;
             const data = jasmineDisableRemaining.data;
             const topSuite = jasmineDisableRemaining.jasmine.getEnv().topSuite();
+            const spec = data.specs[result.id];
 
             // count all failures per suite
-            everyParentSuite(data.specs[result.id].parentSuite, (suite) => {
+            everyParentSuite(spec.parentSuite, (suite) => {
                 if (!_.isObject(suite.result)) {
                     suite.result = {};
                 }
@@ -144,42 +174,94 @@ module.exports = () => {
             let disableConfig;
             let disableSuite;
 
-            // type of disable
+            // while you could set multiple of these "disablers", we return because the "alls" would disable all the others anyway
+            // disable "all"s
             if (config.allSpecsByCLI.disableSpecs) {
                 disableConfig = config.allSpecsByCLI;
                 disableSuite = topSuite;
+                disableAllChildren.call(this, disableConfig, disableSuite);
+                logAfterDisable.call(this, config, disableConfig);
+                callbackAfterDisable.call(this, disableConfig);
+                return;
             } else if (config.allSpecsDynamic.disableSpecs) {
                 disableConfig = config.allSpecsDynamic;
                 disableSuite = topSuite;
-            } else if (config.allFileSpecsDynamic.disableSpecs) {
-                disableConfig = config.allFileSpecsDynamic;
-                disableSuite = findFileSuite(data.specs[result.id].parentSuite);
-            } else {
+                disableAllChildren.call(this, disableConfig, disableSuite);
+                logAfterDisable.call(this, config, disableConfig);
+                callbackAfterDisable.call(this, disableConfig);
                 return;
             }
 
-            // disable
-            disableAllChildren.call(this, disableConfig, disableSuite);
-
-            // log
-            if (_.isString(disableConfig.message)) {
-                config.log(disableConfig.message);
-            } else if (_.isArray(disableConfig.message)) {
-                config.log.apply(this, disableConfig.message);
-            } else if (_.isArray(disableConfig.defaultMessage)) {
-                config.log.apply(this, disableConfig.defaultMessage);
-            } else if (_.isString(disableConfig.defaultMessage)) {
-                config.log(disableConfig.defaultMessage);
+            // disable "all in file"
+            if (config.allFileSpecsDynamic.disableSpecs) {
+                disableConfig = config.allFileSpecsDynamic;
+                disableSuite = findFileSuite(spec.parentSuite);
+                disableAllChildren.call(this, disableConfig, disableSuite);
+                logAfterDisable.call(this, config, disableConfig);
+                callbackAfterDisable.call(this, disableConfig);
             }
 
-            // callback
-            if (_.isFunction(disableConfig.callback)) {
-                disableConfig.callback.call(this, this, result, data.specs[result.id]);
-            }
+            // disable "all matching suites" found
+            this.jasmineDisableRemaining.config.allMatchingSuites.forEach((matcher) => {
+                let foundMatch = false;
+
+                traverseSuiteHierarchy.call(_this, _this.jasmineDisableRemaining.jasmine.getEnv().topSuite(), null, (suite) => {
+                    // since we might have already disabled matchers, make sure they're objects
+                    if (matcher && matcher.match && suite.description.match(matcher.match)) {
+                        foundMatch = true;
+                        disableAllChildren.call(_this, matcher.config, suite);
+                    }
+                });
+
+                if (foundMatch) {
+                    logAfterDisable.call(_this, config, matcher.config);
+                    callbackAfterDisable.call(_this, matcher.config);
+
+                    // since we never need to use this matcher again, remove it
+                    // plus, disableSuite might cause it to not be called in afterAll
+                    removeSuitesMatcher.call(_this, matcher.guid);
+                }
+            });
         }
     }
 
     // private methods
+
+    /*
+     * Add a new matcher for disabling suites anywhere
+     * returns the GUID to remove the matcher
+     */
+    function addSuitesMatcher(match, argConfig) {
+        const _this = this;
+
+        const config = _.merge(
+            {},
+            defaultSuitesMatcherConfig,
+            argConfig
+        );
+
+        // naive GUID assumes we're not called async
+        const matcher = {
+            config,
+            guid: _this.jasmineDisableRemaining.config.allMatchingSuites.length,
+            match
+        };
+
+        _this.jasmineDisableRemaining.config.allMatchingSuites.push(matcher);
+
+        return matcher.guid;
+    }
+
+    /*
+     */
+    function callbackAfterDisable(disableConfig) {
+        const _this = this;
+
+        // callback
+        if (_.isFunction(disableConfig.callback)) {
+            disableConfig.callback.call(_this, _this, result, spec);
+        }
+    }
 
     /*
      * Recursively disable all child specs and suites, starting at `startSuite`
@@ -187,6 +269,7 @@ module.exports = () => {
     function disableAllChildren(config, startSuite) {
         const _this = this;
 
+        // disable
         traverseSuiteHierarchy.call(
             _this,
             startSuite,
@@ -260,11 +343,41 @@ module.exports = () => {
     }
 
     /*
+     */
+    function logAfterDisable(config, disableConfig) {
+        const _this = this;
+
+        // log
+        if (_.isString(disableConfig.message)) {
+            config.log(disableConfig.message);
+        } else if (_.isArray(disableConfig.message)) {
+            config.log.apply(_this, disableConfig.message);
+        } else if (_.isArray(disableConfig.defaultMessage)) {
+            config.log.apply(_this, disableConfig.defaultMessage);
+        } else if (_.isString(disableConfig.defaultMessage)) {
+            config.log(disableConfig.defaultMessage);
+        }
+
+        // callback
+        if (_.isFunction(disableConfig.callback)) {
+            config.callback.call(_this, _this, result, spec);
+        }
+    }
+
+    /*
      * Add `suite` as new property `parentSuite` to `childSpec` and store the spec
      */
     function processSpec(suite, childSpec) {
         childSpec.parentSuite = suite;
         this.jasmineDisableRemaining.data.specs[childSpec.id] = childSpec;
+    }
+
+    /*
+     * Remove a new matcher
+     * To avoid complex GUID generation, keep the array entry, but just null it out
+     */
+    function removeSuitesMatcher(guid) {
+        this.jasmineDisableRemaining.config.allMatchingSuites[guid] = null;
     }
 
     /*
@@ -276,16 +389,20 @@ module.exports = () => {
         const _this = this;
 
         if (_.isFunction(callbackForSuites)) {
-            callbackForSuites.call(_this, suite);
+            if (callbackForSuites) {
+                callbackForSuites.call(_this, suite);
+            }
         }
 
         suite.children
             .filter((child) => child instanceof _this.jasmineDisableRemaining.jasmine.Suite)
             .forEach((childSuite) => traverseSuiteHierarchy.call(_this, childSuite, callbackForSpecs, callbackForSuites));
 
-        suite.children
-            .filter((child) => child instanceof _this.jasmineDisableRemaining.jasmine.Spec)
-            .forEach((childSpec) => callbackForSpecs.call(_this, suite, childSpec));
+        if (callbackForSpecs) {
+            suite.children
+                .filter((child) => child instanceof _this.jasmineDisableRemaining.jasmine.Spec)
+                .forEach((childSpec) => callbackForSpecs.call(_this, suite, childSpec));
+        }
     }
 
     return JasmineDisableRemaining;

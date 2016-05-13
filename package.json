@@ -1,5 +1,5 @@
 {
-  "version": "0.2.2",
+  "version": "0.3.0",
   "name": "jasmine-disable-remaining",
   "description": "Disable all remaining specs on the first spec failure.",
   "author": {
@@ -13,7 +13,7 @@
   },
   "bundledDependencies": [],
   "dependencies": {
-    "lodash": "^4.11.2"
+    "lodash": "^4.12.0"
   },
   "devDependencies": {},
   "engines": {
