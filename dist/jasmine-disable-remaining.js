@@ -15,7 +15,7 @@
 
 const _ = require('lodash');
 
-module.exports = () => {
+module.exports = (() => {
     const defaultSuitesMatcherConfig = {
         callback: null,
 
@@ -406,4 +406,4 @@ module.exports = () => {
     }
 
     return JasmineDisableRemaining;
-}();
+})();
